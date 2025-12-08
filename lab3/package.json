@@ -1,0 +1,38 @@
+{
+  "name": "lab3",
+  "version": "1.0.0",
+  "description": "Лабораторна робота №3.",
+  "keywords": [
+    "nodejs",
+    "express",
+    "lab1"
+  ],
+  "homepage": "https://github.com/alsolo212/ScriptLangs#readme",
+  "bugs": {
+    "url": "https://github.com/alsolo212/ScriptLangs/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alsolo212/ScriptLangs.git"
+  },
+  "license": "MIT",
+  "author": "alsolo212",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ./api/app.js",
+    "seed": "node ./api/seed.js"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "convict": "^6.2.4",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "mongodb": "^7.0.0"
+  },
+  "devDependencies": {
+    "jest": "^30.2.0",
+    "supertest": "^7.1.4"
+  }
+}
