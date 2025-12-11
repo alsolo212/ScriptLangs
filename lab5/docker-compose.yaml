@@ -1,0 +1,27 @@
+version: "3.8"
+
+volumes:
+  mongo_db_data:
+
+services:
+  my_mongodb:
+    image: mongo:latest
+    container_name: my_mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_db_data:/data/db
+
+  app:
+    build: .
+    container_name: node_app_compose
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_DB_HOSTNAME=my_mongodb
+      - MONGO_DB_PORT=27017
+      - MONGO_DB=usersDB
+    depends_on:
+      - my_mongodb

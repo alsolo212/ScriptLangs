@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Медична комісія</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+
+    <h2 class="text-center mb-4 text-success">
+        Журнал медичної комісії
+    </h2>
+
+    <div class="card shadow-sm mb-4 border-success">
+        <div class="card-body">
+            <form name="userForm" class="row g-3">
+                <input type="hidden" name="id" value="0" />
+
+                <div class="col-md-4">
+                    <label class="form-label">Ім'я:</label>
+                    <input class="form-control" name="name" required />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Зріст (см):</label>
+                    <input class="form-control" name="height" type="number" min="50" max="250" required />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Вага (кг):</label>
+                    <input class="form-control" name="weight" type="number" min="10" max="300" required />
+                </div>
+
+                <div class="col-12">
+                    <button id="saveBtn" type="submit" class="btn btn-success me-2">Додати</button>
+                    <button id="reset" type="button" class="btn btn-outline-secondary">Скинути</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between mb-3">
+        <input id="search" class="form-control w-50" placeholder="Пошук по імені...">
+
+        <select id="sort" class="form-select w-25">
+            <option value="">Без сортування</option>
+            <option value="name">За ім'ям (А → Я)</option>
+            <option value="height">За зростом (від меншого до більшого)</option>
+            <option value="weight">За вагою (від більшої до меншої)</option>
+        </select>
+    </div>
+
+    <table class="table table-striped table-bordered shadow-sm bg-white">
+        <thead class="table-success">
+        <tr>
+            <th>Id</th>
+            <th>Ім'я</th>
+            <th>Зріст, см</th>
+            <th>Вага, кг</th>
+            <th style="width:160px;"></th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script>
+    let allUsers = [];
+
+    async function loadUsers() {
+        const response = await fetch("/api/users");
+        allUsers = await response.json();
+        render(allUsers);
+    }
+
+    function render(list) {
+        const tbody = document.querySelector("tbody");
+        tbody.innerHTML = "";
+        list.forEach(u => tbody.append(row(u)));
+    }
+
+    function row(user) {
+        const tr = document.createElement("tr");
+        tr.dataset.rowid = user._id;
+
+        tr.innerHTML = `
+        <td>${user._id}</td>
+        <td>${user.name}</td>
+        <td>${user.height}</td>
+        <td>${user.weight}</td>
+        <td class="text-center">
+            <div class="d-grid gap-1">
+                <button class="btn btn-sm btn-outline-primary w-100 edit" data-id="${user._id}">
+                    Змінити
+                </button>
+                <button class="btn btn-sm btn-outline-danger w-100 delete" data-id="${user._id}">
+                    Видалити
+                </button>
+            </div>
+          </td>`;
+
+        tr.querySelector(".edit").onclick = () => loadUserToForm(user._id);
+        tr.querySelector(".delete").onclick = () => deleteUser(user._id);
+
+        return tr;
+    }
+
+    async function loadUserToForm(id) {
+        const response = await fetch("/api/users/" + id);
+        const user = await response.json();
+        const form = document.forms["userForm"];
+
+        form.id.value = user._id;
+        form.name.value = user.name;
+        form.height.value = user.height;
+        form.weight.value = user.weight;
+
+        document.getElementById("saveBtn").textContent = "Оновити";
+    }
+
+    async function createUser(name, height, weight) {
+        await fetch("/api/users", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ name, height, weight })
+        });
+    }
+
+    async function editUser(id, name, height, weight) {
+        await fetch("/api/users", {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ id, name, height, weight })
+        });
+    }
+
+    async function deleteUser(id) {
+        const ok = confirm("Ви дійсно бажаєте видалити цей запис?");
+        if (!ok) return;
+
+        await fetch("/api/users/" + id, { method: "DELETE" });
+        loadUsers();
+    }
+
+    document.forms["userForm"].onsubmit = async e => {
+        e.preventDefault();
+        const form = e.target;
+
+        const id = form.id.value;
+        const name = form.name.value.trim();
+        const height = parseInt(form.height.value);
+        const weight = parseInt(form.weight.value);
+
+        if (id == 0) await createUser(name, height, weight);
+        else await editUser(id, name, height, weight);
+
+        await loadUsers();
+        resetForm();
+    };
+
+    document.getElementById("reset").addEventListener("click", resetForm);
+
+    function resetForm() {
+        const form = document.forms["userForm"];
+        form.name.value = "";
+        form.height.value = "";
+        form.weight.value = "";
+        form.id.value = "0";
+        document.getElementById("saveBtn").textContent = "Додати";
+    }
+
+    document.getElementById("search").oninput = e => {
+        const text = e.target.value.toLowerCase();
+        const filtered = allUsers.filter(u => u.name.toLowerCase().includes(text));
+        render(filtered);
+    };
+
+    document.getElementById("sort").onchange = e => {
+        const option = e.target.value;
+        let sorted = [...allUsers];
+
+        if (option === "name") sorted.sort((a, b) => a.name.localeCompare(b.name, "uk"));
+        if (option === "height") sorted.sort((a, b) => a.height - b.height);
+        if (option === "weight") sorted.sort((a, b) => b.weight - a.weight);
+
+        render(sorted);
+    };
+
+    loadUsers();
+</script>
+
+</body>
+</html>
